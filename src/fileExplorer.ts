@@ -323,10 +323,7 @@ export class FileExplorer {
 
 		context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider }));
 		vscode.commands.registerCommand('fileExplorer.openFile', (resource) => this.openResource(resource));
-
 		vscode.commands.registerCommand('fileExplorer.replaceIndex', (resource) => this.replaceIndex(resource));
-
-		// TODO refresh dir
 	}
 
 	private openResource(resource: vscode.Uri): void {
