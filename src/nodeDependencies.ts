@@ -3,16 +3,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class NodeDependenciesProvider implements vscode.TreeDataProvider<Dependency> {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string | undefined) {}
 
   private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined | null | void> = new vscode.EventEmitter<Dependency | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<Dependency | undefined | null | void> = this._onDidChangeTreeData.event;
 
   refresh(): void {
+    // WHY fire 以后触发什么事件 ?
     this._onDidChangeTreeData.fire();
   }
 
   getTreeItem(element: Dependency): vscode.TreeItem {
+
+    // const treeItem = new vscode.TreeItem(element.uri, element.type === vscode.FileType.Directory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+		// if (element.type === vscode.FileType.File) {
+		// 	treeItem.command = { command: 'fileExplorer.openFile', title: "Open File", arguments: [element.uri], };
+		// 	treeItem.contextValue = 'file';
+		// }
+    // return treeItem;
+    // console.log('nodeDependencies.ts line:24 ->', element.type);
+    element.contextValue = 'dependency';
+
     return element;
   }
 
@@ -47,7 +58,7 @@ export class NodeDependenciesProvider implements vscode.TreeDataProvider<Depende
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
       const toDep = (moduleName: string, version: string): Dependency => {
-        if (this.pathExists(path.join(this.workspaceRoot, 'node_modules', moduleName))) {
+        if (this.pathExists(path.join(this.workspaceRoot || '', 'node_modules', moduleName))) {
           return new Dependency(
             moduleName,
             version,
