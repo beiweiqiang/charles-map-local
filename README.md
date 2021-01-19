@@ -18,4 +18,5 @@ With this extension, you only **ONE CLICK**, click the response file you want to
 
 - use specific dir as a mock response dir
 - refresh files in dir
-
+- auto create `index.json` if it not exist in dir
+- label the response that current use

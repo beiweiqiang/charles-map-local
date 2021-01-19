@@ -4,6 +4,9 @@
     "description": "Simplify operation in charles map local",
     "version": "0.0.1",
     "publisher": "beiweiqiang",
+    "repository": {
+        "url": "https://github.com/beiweiqiang/charles-map-local"
+    },
     "engines": {
         "vscode": "^1.52.0"
     },
