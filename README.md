@@ -19,10 +19,11 @@ With this extension, you only **ONE CLICK**, click the response file you want to
 
 - use specific dir as a mock response dir
 - can use another dir as a mock dir
-- refresh files in dir
-- refresh all dir
+- ~~refresh files in dir~~
 - auto create `index.json` if it not exist in dir
 - label the response that current use
 - add usage gif
-- can add new mock response file in extension
-- can delete useless mock file
+- ~~can add new mock response file in extension~~
+- ~~can delete useless mock file~~
+- ~~click dir and expend dir files~~
+- ~~create file in workspace~~

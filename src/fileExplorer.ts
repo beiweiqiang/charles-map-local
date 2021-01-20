@@ -155,6 +155,10 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
 
+	private _onDidChangeTreeData: vscode.EventEmitter<Entry | undefined | void> = new vscode.EventEmitter<Entry | undefined | void>();
+
+	readonly onDidChangeTreeData: vscode.Event<Entry | undefined | void> = this._onDidChangeTreeData.event;
+
 	constructor() {
 		this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
 	}
@@ -163,9 +167,13 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		return this._onDidChangeFile.event;
 	}
 
-	// refresh(): void {
-	// 	this._onDidChangeFile.fire();
-	// }
+	get didChangeFile(): vscode.EventEmitter<vscode.FileChangeEvent[]> {
+		return this._onDidChangeFile;
+	}
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
 
 	watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[]; }): vscode.Disposable {
 		const watcher = fs.watch(uri.fsPath, { recursive: options.recursive }, async (event: string, filename: string | Buffer) => {
@@ -266,7 +274,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		return _.rename(oldUri.fsPath, newUri.fsPath);
 	}
 
-	// tree data provider
+	// TODO tree data provider ---------------
 
 	async getChildren(element?: Entry): Promise<Entry[]> {
 		if (element) {
@@ -303,11 +311,6 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			treeItem.contextValue = 'file';
 		}
 		if (element.type === vscode.FileType.Directory) {
-			treeItem.command = {
-				command: 'fileExplorer.refreshFile',
-				title: 'refresh dir',
-				arguments: [element.uri]
-			};
 			treeItem.contextValue = 'dir';
 		}
 		return treeItem;
@@ -315,29 +318,45 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 }
 
 export class FileExplorer {
-	provider: FileSystemProvider | undefined;
-
 	constructor(context: vscode.ExtensionContext) {
 		const treeDataProvider = new FileSystemProvider();
-		this.provider = treeDataProvider;
 
 		context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider }));
-		vscode.commands.registerCommand('fileExplorer.openFile', (resource) => this.openResource(resource));
-		vscode.commands.registerCommand('fileExplorer.replaceIndex', (resource) => this.replaceIndex(resource));
+
+		vscode.commands.registerCommand('fileExplorer.openFile', this.openResource);
+		vscode.commands.registerCommand('fileExplorer.replaceIndex', this.replaceIndex);
+		vscode.commands.registerCommand('fileExplorer.addFile', this.addFile);
+		vscode.commands.registerCommand('fileExplorer.deleteFile', this.deleteFile);
+
+		vscode.commands.registerCommand('fileExplorer.refreshFile', (entry) => treeDataProvider.refresh());
+
+		const watcher = vscode.workspace.createFileSystemWatcher('**/*');
+		watcher.onDidCreate(uri => treeDataProvider.refresh());
+		watcher.onDidChange(uri => treeDataProvider.refresh());
+		watcher.onDidDelete(uri => treeDataProvider.refresh());
+
 	}
 
-	private openResource(resource: vscode.Uri): void {
-		vscode.window.showTextDocument(resource);
+	private deleteFile(entry: Entry): void {
+		vscode.workspace.fs.delete(entry.uri);
 	}
 
-	private replaceIndex(resource: vscode.Uri): void {
-		// @ts-ignore
-		const p = (<string> resource.uri.path).slice(1);
-		const pathParse = path.parse(p);
-		const newPath = path.join(pathParse.dir, 'index.json');
+	private addFile(entry: Entry): void {
+		vscode.window.showInputBox({ placeHolder: 'file name' }).then(text => {
+			if (text === undefined) { return; }
 
-		fs.copyFile(p, newPath, (err) => {
-			if (err) throw err;
+			const newUri = vscode.Uri.file(path.join(entry.uri.fsPath, text))
+			vscode.workspace.fs.writeFile(newUri, Buffer.from(''));
 		});
+	}
+
+	private openResource(uri: vscode.Uri): void {
+		vscode.window.showTextDocument(uri);
+	}
+
+	private replaceIndex(entry: Entry): void {
+		const pathParse = path.parse(entry.uri.fsPath);
+		const newUri = vscode.Uri.file(path.join(pathParse.dir, 'index.json'));
+		vscode.workspace.fs.copy(entry.uri, newUri, { overwrite: true });
 	}
 }
