@@ -159,8 +159,12 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	readonly onDidChangeTreeData: vscode.Event<Entry | undefined | void> = this._onDidChangeTreeData.event;
 
-	constructor() {
+	private _entry: Entry
+
+	constructor(entry: Entry) {
 		this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
+
+		this._entry = entry;
 	}
 
 	get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -173,6 +177,12 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
+	}
+
+	// TODO
+	reSelectEntry(entry: Entry): void {
+		this._entry = entry;
+		this.refresh();
 	}
 
 	watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[]; }): vscode.Disposable {
@@ -285,16 +295,15 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			}));
 		}
 
-		const workspaceFolder = (vscode.workspace.workspaceFolders || []).filter(folder => folder.uri.scheme === 'file')[0];
-		if (workspaceFolder) {
-			const children = await this.readDirectory(workspaceFolder.uri);
+		if (this._entry) {
+			const children = await this.readDirectory(this._entry.uri);
 			children.sort((a, b) => {
 				if (a[1] === b[1]) {
 					return a[0].localeCompare(b[0]);
 				}
 				return a[1] === vscode.FileType.Directory ? -1 : 1;
 			});
-			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(workspaceFolder.uri.fsPath, name)), type }));
+			return children.map(([name, type]) => ({ uri: vscode.Uri.file(path.join(this._entry.uri.fsPath, name)), type }));
 		}
 
 		return [];
@@ -319,21 +328,35 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 export class FileExplorer {
 	constructor(context: vscode.ExtensionContext) {
-		const treeDataProvider = new FileSystemProvider();
 
-		context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider }));
+		vscode.window.showOpenDialog({
+			canSelectFolders: true
+		}).then((uris: vscode.Uri[] | undefined) => {
+			if (uris) {
+
+				const treeDataProvider = new FileSystemProvider({
+					uri: uris[0],
+					type: vscode.FileType.Directory
+				});
+
+				context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider }));
+
+
+				vscode.commands.registerCommand('fileExplorer.refreshFile', (entry) => treeDataProvider.refresh());
+
+				const watcher = vscode.workspace.createFileSystemWatcher('**/*');
+				watcher.onDidCreate(uri => treeDataProvider.refresh());
+				watcher.onDidChange(uri => treeDataProvider.refresh());
+				watcher.onDidDelete(uri => treeDataProvider.refresh());
+			}
+		})
 
 		vscode.commands.registerCommand('fileExplorer.openFile', this.openResource);
 		vscode.commands.registerCommand('fileExplorer.replaceIndex', this.replaceIndex);
 		vscode.commands.registerCommand('fileExplorer.addFile', this.addFile);
 		vscode.commands.registerCommand('fileExplorer.deleteFile', this.deleteFile);
 
-		vscode.commands.registerCommand('fileExplorer.refreshFile', (entry) => treeDataProvider.refresh());
-
-		const watcher = vscode.workspace.createFileSystemWatcher('**/*');
-		watcher.onDidCreate(uri => treeDataProvider.refresh());
-		watcher.onDidChange(uri => treeDataProvider.refresh());
-		watcher.onDidDelete(uri => treeDataProvider.refresh());
+		
 
 	}
 
