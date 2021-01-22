@@ -11,3 +11,11 @@
 ## v0.0.3
 
 - You can choose another folder as root at begain
+
+## v0.0.4
+
+- add base function
+
+## v0.0.5
+
+- add logo

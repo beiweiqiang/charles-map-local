@@ -1,8 +1,9 @@
 {
     "name": "charles-map-local",
+    "icon": "resources/logo.png",
     "displayName": "charles-map-local",
     "description": "Simplify operation in charles map local",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "beiweiqiang",
     "repository": {
         "url": "https://github.com/beiweiqiang/charles-map-local"

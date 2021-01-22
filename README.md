@@ -31,7 +31,8 @@ Open the extension:
 - label the response that current use
 - add usage gif
 - if not choose, display welcome view and can choose again
-- <del>if only choose the dir with a flat api, also can add, delete<del>
+- <del>add extension logo</del>
+- <del>if only choose the dir with a flat api, also can add, delete</del>
 - <del>can create new dir in root</del>
 - <del>can create new file in root</del>
 - <del>can modify folder name</del>
