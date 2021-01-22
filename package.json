@@ -2,7 +2,7 @@
     "name": "charles-map-local",
     "displayName": "charles-map-local",
     "description": "Simplify operation in charles map local",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "beiweiqiang",
     "repository": {
         "url": "https://github.com/beiweiqiang/charles-map-local"
@@ -30,7 +30,7 @@
         },
         "commands": [
             {
-                "command": "fileExplorer.refreshFile",
+                "command": "fileExplorer.refresh",
                 "title": "Refresh",
                 "icon": {
                     "light": "resources/light/refresh.svg",
@@ -51,27 +51,63 @@
             },
             {
                 "command": "fileExplorer.addFile",
-                "title": "Add"
+                "title": "Add file"
+            },
+            {
+                "command": "fileExplorer.rename",
+                "title": "Rename"
+            },
+            {
+                "command": "fileExplorer.deleteDir",
+                "title": "Delete"
+            },
+            {
+                "command": "fileExplorer.addDir",
+                "title": "Add folder"
             }
         ],
         "menus": {
+            "view/title": [
+                {
+                    "command": "fileExplorer.refresh",
+                    "when": "view == fileExplorer",
+                    "group": "navigation"
+                },
+                {
+                    "command": "fileExplorer.addDir",
+                    "when": "view == fileExplorer"
+                },
+                {
+                    "command": "fileExplorer.addFile",
+                    "when": "view == fileExplorer"
+                }
+            ],
             "view/item/context": [
+                {
+                    "command": "fileExplorer.rename",
+                    "when": "view == fileExplorer"
+                },
+
+
                 {
                     "command": "fileExplorer.replaceIndex",
                     "when": "view == fileExplorer && viewItem == file",
                     "group": "inline"
                 },
-                {
-                    "command": "fileExplorer.refreshFile",
-                    "when": "view == fileExplorer && viewItem == dir",
-                    "group": "inline"
-                },
+                
                 {
                     "command": "fileExplorer.deleteFile",
                     "when": "view == fileExplorer && viewItem == file"
                 },
+
+
+                
                 {
                     "command": "fileExplorer.addFile",
+                    "when": "view == fileExplorer && viewItem == dir"
+                },
+                {
+                    "command": "fileExplorer.deleteDir",
                     "when": "view == fileExplorer && viewItem == dir"
                 }
             ]

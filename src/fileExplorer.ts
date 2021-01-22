@@ -195,6 +195,8 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				type: event === 'change' ? vscode.FileChangeType.Changed : await _.exists(filepath) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted,
 				uri: uri.with({ path: filepath })
 			} as vscode.FileChangeEvent]);
+
+			this._onDidChangeTreeData.fire();
 		});
 
 		return { dispose: () => watcher.close() };
@@ -327,49 +329,85 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 }
 
 export class FileExplorer {
+	private _uri: vscode.Uri | undefined;
+	private _provider: FileSystemProvider | undefined;
+
 	constructor(context: vscode.ExtensionContext) {
+		const self = this;
 
 		vscode.window.showOpenDialog({
 			canSelectFolders: true
 		}).then((uris: vscode.Uri[] | undefined) => {
 			if (uris) {
+				self._uri = uris[0];
 
-				const treeDataProvider = new FileSystemProvider({
+				this._provider = new FileSystemProvider({
 					uri: uris[0],
 					type: vscode.FileType.Directory
 				});
 
-				context.subscriptions.push(vscode.window.createTreeView('fileExplorer', { treeDataProvider }));
+				context.subscriptions.push(vscode.window.createTreeView('fileExplorer', {
+					treeDataProvider: this._provider
+				}));
 
+				vscode.commands.registerCommand('fileExplorer.refresh', (entry) => this._provider?.refresh());
 
-				vscode.commands.registerCommand('fileExplorer.refreshFile', (entry) => treeDataProvider.refresh());
-
-				const watcher = vscode.workspace.createFileSystemWatcher('**/*');
-				watcher.onDidCreate(uri => treeDataProvider.refresh());
-				watcher.onDidChange(uri => treeDataProvider.refresh());
-				watcher.onDidDelete(uri => treeDataProvider.refresh());
+				this._provider?.watch(uris[0], { recursive: true, excludes: [] });
 			}
 		})
 
-		vscode.commands.registerCommand('fileExplorer.openFile', this.openResource);
-		vscode.commands.registerCommand('fileExplorer.replaceIndex', this.replaceIndex);
-		vscode.commands.registerCommand('fileExplorer.addFile', this.addFile);
-		vscode.commands.registerCommand('fileExplorer.deleteFile', this.deleteFile);
-
-		
-
+		vscode.commands.registerCommand('fileExplorer.openFile', this.openResource.bind(this));
+		vscode.commands.registerCommand('fileExplorer.replaceIndex', this.replaceIndex.bind(this));
+		vscode.commands.registerCommand('fileExplorer.addFile', this.addFile.bind(this));
+		vscode.commands.registerCommand('fileExplorer.addDir', this.addDir.bind(this));
+		vscode.commands.registerCommand('fileExplorer.deleteFile', this.delete.bind(this));
+		vscode.commands.registerCommand('fileExplorer.rename', this.rename.bind(this));
+		vscode.commands.registerCommand('fileExplorer.deleteDir', this.delete.bind(this));
 	}
 
-	private deleteFile(entry: Entry): void {
-		vscode.workspace.fs.delete(entry.uri);
+	private delete(entry: Entry): void {
+		this._provider?.delete(entry.uri, { recursive: true });
 	}
 
-	private addFile(entry: Entry): void {
+	private rename(entry: Entry): void {
+		const p = path.parse(entry.uri.fsPath);
+
+		vscode.window.showInputBox({
+			value: p.base
+		}).then(text => {
+			if (text === undefined) { return; }
+
+			const newUri = vscode.Uri.file(path.join(p.dir, text));
+			vscode.workspace.fs.rename(entry.uri, newUri, { overwrite: true });
+		});
+	}
+
+	private addDir(entry: Entry | undefined): void {
+		vscode.window.showInputBox({ placeHolder: 'folder name' }).then(text => {
+			if (text === undefined) { return; }
+
+			let u: vscode.Uri | undefined = this._uri;
+			if (entry) u = entry.uri;
+
+			const newUri = vscode.Uri.file(path.join(u!.fsPath, text));
+			(<Thenable<void>> this._provider?.createDirectory(newUri)).then(undefined, err => {
+				console.log('fileExplorer.ts line:402 ->', err);
+			});
+		});
+	}
+
+	private addFile(entry: Entry | undefined): void {
 		vscode.window.showInputBox({ placeHolder: 'file name' }).then(text => {
 			if (text === undefined) { return; }
 
-			const newUri = vscode.Uri.file(path.join(entry.uri.fsPath, text))
-			vscode.workspace.fs.writeFile(newUri, Buffer.from(''));
+			let u: vscode.Uri | undefined = this._uri;
+			if (entry) u = entry.uri;
+
+			const newUri = vscode.Uri.file(path.join(u!.fsPath, text));
+			this._provider?.writeFile(newUri, Buffer.from(''), { create: true, overwrite: true });
+		})
+		.then(undefined, err => {
+			console.log('fileExplorer.ts line:415 ->', err);
 		});
 	}
 
