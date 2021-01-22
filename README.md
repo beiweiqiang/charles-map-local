@@ -1,8 +1,14 @@
-# charles-map-local README
+<p align="center">
+  <img alt="Charles Map Local logo" src="resources/logo.png" />
+</p>
 
-[marketplace link](https://marketplace.visualstudio.com/items?itemName=beiweiqiang.charles-map-local)
+<br />
+
+# charles-map-local
 
 ## Features
+
+This is a [vscode extension]((https://marketplace.visualstudio.com/items?itemName=beiweiqiang.charles-map-local)).
 
 When we use Charles's Map Local function to test different response. Often requires a lot of repeated clicks and operations to change local file, so that we can provider different response.
 
