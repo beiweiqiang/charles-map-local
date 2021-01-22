@@ -19,3 +19,7 @@
 ## v0.0.5
 
 - add logo
+
+## v0.0.6
+
+- update usage in readme

@@ -1,27 +1,25 @@
 # charles-map-local README
 
+[marketplace link](https://marketplace.visualstudio.com/items?itemName=beiweiqiang.charles-map-local)
+
 ## Features
 
-When we use Charles's Map Local function to test different response. Often requires a lot of repeated clicks and operations to change local file, in order to provider different response.
+When we use Charles's Map Local function to test different response. Often requires a lot of repeated clicks and operations to change local file, so that we can provider different response.
 
-With this extension, you only **ONE CLICK**, click the response file you want to provide. Charles will choose your clicked file as response.
+With this extension, you just need **ONE CLICK** to change the mock response.
 
 ## Usage
 
-Your mock data dir should like this:
+Before Use"
 
-1. Build a total dir, contains all mock response data
-2. Each mock api in a dir
-3. Each mock dir has own `index.json` file
-
-Set Charles Map Local:
-
-1. Set the `index.json` as the entry point of each response in Charles's Map Local
+- Create your mock folder
+  - The folder shold contain a `index.json` file
+- Set the `index.json` file as the entry point of the mock file response in Charles's Map Local
 
 Open the extension:
 
-1. Choose your mock data dir
-2. Click the response file which you want to set as a response in each api dir
+1. Choose your mock folder
+2. Click the response file which you want to set as a mock response
 
 ## To do list
 
