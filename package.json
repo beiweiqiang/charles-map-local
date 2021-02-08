@@ -3,7 +3,7 @@
     "icon": "resources/logo.png",
     "displayName": "charles-map-local",
     "description": "Simplify operation in charles map local",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "publisher": "beiweiqiang",
     "repository": {
         "url": "https://github.com/beiweiqiang/charles-map-local"
@@ -132,8 +132,8 @@
         },
         "viewsWelcome": [
             {
-                "view": "nodeDependencies",
-                "contents": "No node dependencies found [learn more](https://www.npmjs.com/).\n[Add Dependency](command:nodeDependencies.addEntry)"
+                "view": "fileExplorer",
+                "contents": "Plz pick folder.\n[Pick folder](command:fileExplorer.pickFolder)"
             }
         ]
     },

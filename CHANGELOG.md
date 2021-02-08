@@ -32,3 +32,9 @@
 ## v0.0.8
 
 - fix readme image not show
+
+## v0.0.9
+
+- the folder path you already pick up, can be save so that next time needless to choose again
+- label the response that current use
+- add welcome view

@@ -6,6 +6,9 @@ import * as rimraf from 'rimraf';
 
 //#region Utilities
 
+// 可以通过在 key 后面加版本号来控制用户本地 key 不与旧 key 冲突
+const CHOOSE_FILES = 'CHOOSE_FILES';
+const KEY_LOCAL_PATH = 'LAST_CHOOSE_LOCAL_PATH';
 namespace _ {
 
 	function handleResult<T>(resolve: (result: T) => void, reject: (error: Error) => void, error: Error | null | undefined, result: T): void {
@@ -159,30 +162,51 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	readonly onDidChangeTreeData: vscode.Event<Entry | undefined | void> = this._onDidChangeTreeData.event;
 
-	private _entry: Entry
+	private _entry: Entry;
+	private _context: vscode.ExtensionContext;
+	private _choose_files: string[];
 
-	constructor(entry: Entry) {
+	constructor(entry: Entry, context: vscode.ExtensionContext) {
 		this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
-
 		this._entry = entry;
+		this._context = context;
+
+		const chooseFilesString: string | undefined = context.globalState.get(CHOOSE_FILES);
+		if (chooseFilesString) {
+			try {
+				this._choose_files = JSON.parse(chooseFilesString);
+			} catch(e) {
+				console.error(e);
+				this._choose_files = [];
+			}
+		} else {
+			this._choose_files = [];
+		}
+	}
+
+	updateChooseFilesStorage(newUri: vscode.Uri) {
+		if (this._choose_files.findIndex(i => i === newUri.fsPath) > -1) {
+			return;
+		}
+
+		const dirPath = path.parse(newUri.fsPath).dir;
+		const idx = this._choose_files.findIndex(i => i.startsWith(dirPath));
+
+		if (idx > -1) {
+			this._choose_files.splice(idx, 1, newUri.fsPath);
+		} else {
+			this._choose_files.push(newUri.fsPath);
+		}
+
+		this._context.globalState.update(CHOOSE_FILES, JSON.stringify(this._choose_files));
 	}
 
 	get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
 		return this._onDidChangeFile.event;
 	}
 
-	get didChangeFile(): vscode.EventEmitter<vscode.FileChangeEvent[]> {
-		return this._onDidChangeFile;
-	}
-
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
-	}
-
-	// TODO
-	reSelectEntry(entry: Entry): void {
-		this._entry = entry;
-		this.refresh();
 	}
 
 	watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[]; }): vscode.Disposable {
@@ -286,7 +310,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		return _.rename(oldUri.fsPath, newUri.fsPath);
 	}
 
-	// TODO tree data provider ---------------
+	// tree data provider ---------------
 
 	async getChildren(element?: Entry): Promise<Entry[]> {
 		if (element) {
@@ -320,6 +344,10 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				arguments: [element.uri],
 			};
 			treeItem.contextValue = 'file';
+
+			if (this._choose_files?.findIndex(i => i === element.uri.fsPath) > -1) {
+				treeItem.description = '✔️';
+			}
 		}
 		if (element.type === vscode.FileType.Directory) {
 			treeItem.contextValue = 'dir';
@@ -337,7 +365,7 @@ export class FileExplorer {
 		this._provider = new FileSystemProvider({
 			uri: this._uri,
 			type: vscode.FileType.Directory
-		});
+		}, context);
 
 		context.subscriptions.push(vscode.window.createTreeView('fileExplorer', {
 			treeDataProvider: this._provider
@@ -347,14 +375,26 @@ export class FileExplorer {
 	}
 
 	constructor(context: vscode.ExtensionContext) {
-		vscode.window.showOpenDialog({
-			canSelectFolders: true
-		}).then((uris: vscode.Uri[] | undefined) => {
-			if (uris) {
-				this.refreshProvider(context, uris[0]);
-				vscode.commands.registerCommand('fileExplorer.refresh', (entry) => this._provider?.refresh());
-			}
-		})
+		// TODO clear
+		// context.globalState.update(KEY_LOCAL_PATH, '');
+		// return;
+
+		const lastUriPath: string | undefined = context.globalState.get(KEY_LOCAL_PATH);
+		if (lastUriPath) {
+			this.refreshProvider(context, vscode.Uri.parse(lastUriPath));
+			vscode.commands.registerCommand('fileExplorer.refresh', (entry) => this._provider?.refresh());
+		} else {
+			vscode.window.showOpenDialog({
+				canSelectFolders: true
+			}).then((uris: vscode.Uri[] | undefined) => {
+				if (uris) {
+					this.refreshProvider(context, uris[0]);
+					vscode.commands.registerCommand('fileExplorer.refresh', (entry) => this._provider?.refresh());
+
+					context.globalState.update(KEY_LOCAL_PATH, uris[0].path);
+				}
+			})
+		}
 
 		vscode.commands.registerCommand('fileExplorer.openFile', this.openResource.bind(this));
 		vscode.commands.registerCommand('fileExplorer.replaceIndex', this.replaceIndex.bind(this));
@@ -371,7 +411,10 @@ export class FileExplorer {
 			canSelectFolders: true
 		}).then((uris: vscode.Uri[] | undefined) => {
 			if (uris) {
-				this.refreshProvider(context, uris[0]);
+				const uri = uris[0];
+
+				this.refreshProvider(context, uri);
+				context.globalState.update(KEY_LOCAL_PATH, uri.path);
 			}
 		});
 	}
@@ -430,5 +473,7 @@ export class FileExplorer {
 		const pathParse = path.parse(entry.uri.fsPath);
 		const newUri = vscode.Uri.file(path.join(pathParse.dir, 'index.json'));
 		vscode.workspace.fs.copy(entry.uri, newUri, { overwrite: true });
+
+		this._provider?.updateChooseFilesStorage(entry.uri);
 	}
 }
