@@ -14,7 +14,7 @@ With this extension, you just need **ONE CLICK** to change the mock response.
 
 ## Usage
 
-Before Use"
+Before Use:
 
 - Create your mock folder
   - The folder shold contain a `index.json` file
