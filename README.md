@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Charles Map Local logo" src="resources/logo.png" />
+  <img alt="Charles Map Local logo" src="https://raw.githubusercontent.com/beiweiqiang/charles-map-local/main/resources/logo.png" />
 </p>
 
 <br />
@@ -14,7 +14,7 @@ With this extension, you just need **ONE CLICK** to change the mock response.
 
 ## Usage
 
-![usage](resources/charles-map-local.gif)
+![usage](https://raw.githubusercontent.com/beiweiqiang/charles-map-local/main/resources/charles-map-local.gif)
 
 Before Use:
 
