@@ -23,3 +23,8 @@
 ## v0.0.6
 
 - update usage in readme
+
+## v0.0.7
+
+- add usage gif
+- can choose another folder as root dir

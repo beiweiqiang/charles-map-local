@@ -14,6 +14,8 @@ With this extension, you just need **ONE CLICK** to change the mock response.
 
 ## Usage
 
+![usage](resources/charles-map-local.gif)
+
 Before Use:
 
 - Create your mock folder
@@ -27,7 +29,6 @@ Open the extension:
 
 ## To do list
 
-- can use another dir as a root mock dir
 - save the folder already pick, so that next time no need to pick again
 - auto create `index.json` if it not exist in dir
 - label the response that current use
@@ -46,3 +47,4 @@ Open the extension:
 - <del>create file in workspace</del>
 - <del>use specific dir as a mock response dir</del>
 - <del>bug: after add/modify file, content not refresh</del>
+- <del>can use another dir as a root mock dir</del>

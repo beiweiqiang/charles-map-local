@@ -332,27 +332,27 @@ export class FileExplorer {
 	private _uri: vscode.Uri | undefined;
 	private _provider: FileSystemProvider | undefined;
 
-	constructor(context: vscode.ExtensionContext) {
-		const self = this;
+	private refreshProvider(context: vscode.ExtensionContext, uri: vscode.Uri): void {
+		this._uri = uri;
+		this._provider = new FileSystemProvider({
+			uri: this._uri,
+			type: vscode.FileType.Directory
+		});
 
+		context.subscriptions.push(vscode.window.createTreeView('fileExplorer', {
+			treeDataProvider: this._provider
+		}));
+
+		this._provider?.watch(this._uri, { recursive: true, excludes: [] });
+	}
+
+	constructor(context: vscode.ExtensionContext) {
 		vscode.window.showOpenDialog({
 			canSelectFolders: true
 		}).then((uris: vscode.Uri[] | undefined) => {
 			if (uris) {
-				self._uri = uris[0];
-
-				this._provider = new FileSystemProvider({
-					uri: uris[0],
-					type: vscode.FileType.Directory
-				});
-
-				context.subscriptions.push(vscode.window.createTreeView('fileExplorer', {
-					treeDataProvider: this._provider
-				}));
-
+				this.refreshProvider(context, uris[0]);
 				vscode.commands.registerCommand('fileExplorer.refresh', (entry) => this._provider?.refresh());
-
-				this._provider?.watch(uris[0], { recursive: true, excludes: [] });
 			}
 		})
 
@@ -363,6 +363,17 @@ export class FileExplorer {
 		vscode.commands.registerCommand('fileExplorer.deleteFile', this.delete.bind(this));
 		vscode.commands.registerCommand('fileExplorer.rename', this.rename.bind(this));
 		vscode.commands.registerCommand('fileExplorer.deleteDir', this.delete.bind(this));
+		vscode.commands.registerCommand('fileExplorer.pickFolder', this.pickFolder.bind(this, context));
+	}
+
+	private pickFolder(context: vscode.ExtensionContext):void {
+		vscode.window.showOpenDialog({
+			canSelectFolders: true
+		}).then((uris: vscode.Uri[] | undefined) => {
+			if (uris) {
+				this.refreshProvider(context, uris[0]);
+			}
+		});
 	}
 
 	private delete(entry: Entry): void {
